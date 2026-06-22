@@ -19,6 +19,24 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
+
+    // used by tests
+    public void send(String transactionLine) {
+
+        String[] data = transactionLine.split(", ");
+
+        Transaction transaction =
+                new Transaction(
+                        Long.parseLong(data[0]),
+                        Long.parseLong(data[1]),
+                        Float.parseFloat(data[2])
+                );
+
+        kafkaTemplate.send(topic, transaction);
+    }
+
+
+    // optional helper
     public void send(Transaction transaction) {
         kafkaTemplate.send(topic, transaction);
     }

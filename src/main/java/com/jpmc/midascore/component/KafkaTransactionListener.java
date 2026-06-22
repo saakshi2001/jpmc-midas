@@ -15,8 +15,11 @@ public class KafkaTransactionListener {
     @Autowired
         private UserRepository userRepository;
 
-        @Autowired
-        private TransactionRepository transactionRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+
+    @Autowired
+    private IncentiveClient incentiveClient;
 
     @KafkaListener(
             topics = "${general.kafka-topic}",
@@ -33,40 +36,45 @@ public class KafkaTransactionListener {
         UserRecord recipient = userRepository.findById(transaction.getRecipientId());
 
         if(sender == null || recipient == null) {
-            return;
+        return;
         }
 
         if(sender.getBalance() < transaction.getAmount()) {
-            return;
+        return;
         }
+
+        float incentive =
+        incentiveClient.getIncentive(transaction);
+
 
         sender.setBalance(
         sender.getBalance() - transaction.getAmount()
         );
 
         recipient.setBalance(
-                recipient.getBalance() + transaction.getAmount()
+                recipient.getBalance() + transaction.getAmount()+incentive
         );
 
         userRepository.save(sender);
         userRepository.save(recipient);
 
-        System.out.println(
-        sender.getName() + " balance = " + sender.getBalance()
-    );
 
-        System.out.println(
-            recipient.getName() + " balance = " + recipient.getBalance()
-        );
 
         TransactionRecord record =
         new TransactionRecord(
-                sender,
-                recipient,
-                transaction.getAmount()
+        sender,
+        recipient,
+        transaction.getAmount(),
+        incentive
         );
 
         transactionRepository.save(record);
 
-    }
+        UserRecord wilbur = userRepository.findById(9);
+
+        System.out.println(
+            "Wilbur balance: " + wilbur.getBalance()
+        );
+
+        }
 }
